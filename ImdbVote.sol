@@ -22,10 +22,6 @@ contract ImdbVote {
     mapping (string => uint) votes;
     address[] public voters;
 
-    function getVoters() returns (address[]) {
-        return voters;
-    }
-
     function ImdbVote() {
         owner = msg.sender;
         create_time = block.timestamp;
@@ -51,6 +47,7 @@ contract ImdbVote {
     function payRandomVoter() {
         uint prandom_index = uint(sha3(block.timestamp)) % voters.length;
         voters[prandom_index].transfer(this.balance);
+	last_payout = block.timestamp;
     }
 
     // A crude way to maintain a uniuqe "set". A sorted list of addresses could
@@ -72,7 +69,6 @@ contract ImdbVote {
         addToVoters(msg.sender);
         if (isPayoutTime()) {
             payRandomVoter();
-            last_payout = block.timestamp;
         }
     }
 }
