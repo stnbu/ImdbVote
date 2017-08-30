@@ -18,8 +18,7 @@ contract ImdbVote {
     address public owner;
     uint public last_payout;
     uint public create_time;
-    //uint constant one_month = 60*60*24*30;
-    uint constant one_month = 60;
+    uint constant one_month = 60*60*24*30;
     mapping (string => uint) votes;
     address[] public voters;
 
