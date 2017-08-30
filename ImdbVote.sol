@@ -25,7 +25,7 @@ contract ImdbVote {
     function ImdbVote() {
         owner = msg.sender;
         create_time = block.timestamp;
-        last_payout = block.timestamp;
+        last_payout = create_time;
     }
 
     function getIdTotal(string ID) constant returns (uint) {
@@ -37,17 +37,15 @@ contract ImdbVote {
     }
 
     function isPayoutTime() returns (bool) {
-        if (block.timestamp-last_payout > one_month) {
-            return true;
-        } else {
-            return false;
-        }
+        return (block.timestamp-last_payout > one_month);
     }
 
     function payRandomVoter() {
+        // FIXME -- this is probably not prandom enough. Can probably be
+        // gamed, etc.
         uint prandom_index = uint(sha3(block.timestamp)) % voters.length;
         voters[prandom_index].transfer(this.balance);
-	last_payout = block.timestamp;
+        last_payout = block.timestamp;
     }
 
     // A crude way to maintain a uniuqe "set". A sorted list of addresses could
@@ -61,7 +59,6 @@ contract ImdbVote {
             }
         }
         voters.push(voter);
-        return;
     }
 
     function castVote(string ID) payable {
