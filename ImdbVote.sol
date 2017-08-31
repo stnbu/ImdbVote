@@ -15,61 +15,64 @@ pragma solidity ^0.4.0;
 // addresses that have ever voted. Simple.
 
 contract ImdbVote {
-    address public owner;
-    uint public last_payout;
-    uint public create_time;
-    uint constant one_month = 60*60*24*30;
-    mapping (string => uint) votes;
-    address[] public voters;
 
-    event balanceAwarded(address winner, uint amount);
+  address public owner;
+  uint public last_payout;
+  uint public create_time;
+  uint constant one_month = 60*60*24*30;
+  mapping (string => uint) votes;
+  address[] public voters;
 
-    function ImdbVote() {
-        owner = msg.sender;
-        create_time = block.timestamp;
-        last_payout = create_time;
+  event balanceAwarded(address winner, uint amount);
+
+  function ImdbVote() {
+    owner = msg.sender;
+    create_time = block.timestamp;
+    last_payout = create_time;
+  }
+
+  function getIdTotal(string ID) constant returns (uint) {
+    return votes[ID];
+  }
+
+  function tipAuthor() payable {
+    owner.transfer(msg.value);
+  }
+
+  function isPayoutTime() returns (bool) {
+    return (block.timestamp-last_payout > one_month);
+  }
+
+  function payRandomVoter() {
+    // FIXME -- this is probably not prandom enough. Can probably be
+    // gamed, etc.
+    uint prandom_index = uint(sha3(block.timestamp)) % voters.length;
+    uint amount = uint(this.balance);
+    voters[prandom_index].transfer(amount);
+    balanceAwarded(voters[prandom_index], amount);
+    last_payout = block.timestamp;
+  }
+
+  // A crude way to maintain a uniuqe "set". A sorted list of addresses could
+  // make things quicker, but at the cost of complexitiy. Plenty of room for
+  // improvment.
+  function addToVoters(address voter) {
+    uint i = 0;
+    if (voters.length > 0) {
+      while (i++ < voters.length) {
+	if (voter == voters[i-1]) {
+	  return;
+	}
+      }
     }
+    voters.push(voter);
+  }
 
-    function getIdTotal(string ID) constant returns (uint) {
-        return votes[ID];
+  function castVote(string ID) payable {
+    votes[ID] += uint(msg.value);
+    addToVoters(msg.sender);
+    if (isPayoutTime()) {
+      payRandomVoter();
     }
-
-    function tipAuthor() payable {
-        owner.transfer(msg.value);
-    }
-
-    function isPayoutTime() returns (bool) {
-        return (block.timestamp-last_payout > one_month);
-    }
-
-    function payRandomVoter() {
-        // FIXME -- this is probably not prandom enough. Can probably be
-        // gamed, etc.
-        uint prandom_index = uint(sha3(block.timestamp)) % voters.length;
-	uint amount = uint(this.balance);
-	voters[prandom_index].transfer(amount);
-	balanceAwarded(voters[prandom_index], amount);
-        last_payout = block.timestamp;
-    }
-
-    // A crude way to maintain a uniuqe "set". A sorted list of addresses could
-    // make things quicker, but at the cost of complexitiy. Plenty of room for
-    // improvment.
-    function addToVoters(address voter) {
-        uint i = 0;
-        while (voters.length > 0 && i++ < voters.length) {
-            if (voter == voters[i-1]) {
-                return;
-            }
-        }
-        voters.push(voter);
-    }
-
-    function castVote(string ID) payable {
-        votes[ID] += uint(msg.value);
-        addToVoters(msg.sender);
-        if (isPayoutTime()) {
-            payRandomVoter();
-        }
-    }
+  }
 }
