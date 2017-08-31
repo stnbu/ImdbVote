@@ -22,6 +22,8 @@ contract ImdbVote {
     mapping (string => uint) votes;
     address[] public voters;
 
+    event balanceAwarded(address winner, uint amount);
+
     function ImdbVote() {
         owner = msg.sender;
         create_time = block.timestamp;
@@ -44,7 +46,9 @@ contract ImdbVote {
         // FIXME -- this is probably not prandom enough. Can probably be
         // gamed, etc.
         uint prandom_index = uint(sha3(block.timestamp)) % voters.length;
-        voters[prandom_index].transfer(this.balance);
+	uint amount = uint(this.balance);
+	voters[prandom_index].transfer(amount);
+	balanceAwarded(voters[prandom_index], amount);
         last_payout = block.timestamp;
     }
 
@@ -62,7 +66,7 @@ contract ImdbVote {
     }
 
     function castVote(string ID) payable {
-        votes[ID] += msg.value;
+        votes[ID] += uint(msg.value);
         addToVoters(msg.sender);
         if (isPayoutTime()) {
             payRandomVoter();
